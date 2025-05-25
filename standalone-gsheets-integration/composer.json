@@ -1,0 +1,47 @@
+{
+    "name": "d-7j/standalone-gsheets-reader",
+    "description": "پلاگین مستقل خواندن گوگل شیت برای وردپرس با امکان نمایش داده‌ها بر اساس Discord ID - API v4",
+    "type": "wordpress-plugin",
+    "keywords": ["wordpress", "google-sheets", "reader", "discord", "data-display", "api-v4"],
+    "homepage": "https://forge-boost.com",
+    "license": "GPL-2.0-or-later",
+    "authors": [
+        {
+            "name": "d4wood",
+            "email": "dawood.coin@gmail.com",
+            "homepage": "https://forge-boost.com"
+        }
+    ],
+    "require": {
+        "php": ">=8.0",
+        "google/apiclient": "^2.15.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.0"
+    },
+    
+    "autoload-dev": {},
+    "scripts": {
+        "test": "phpunit",
+        "post-install-cmd": [
+            "echo 'پلاگین خواندن گوگل شیت API v4 آماده استفاده است. لطفاً فایل credentials گوگل را در بخش تنظیمات آپلود کنید.'"
+        ],
+        "clear-cache": [
+            "echo 'Clearing Google Sheets cache...'",
+            "wp transient delete --all --allow-root 2>/dev/null || echo 'WP-CLI not available, please clear cache manually'"
+        ]
+    },
+    "support": {
+        "issues": "https://github.com/d-7j/standalone-gsheets-reader/issues",
+        "source": "https://github.com/d-7j/standalone-gsheets-reader"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true,
+        "allow-plugins": {
+            "composer/installers": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
