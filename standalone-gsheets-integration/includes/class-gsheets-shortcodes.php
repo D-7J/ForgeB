@@ -1,6 +1,6 @@
 <?php
 /**
- * کلاس شورت‌کدهای مستقل - نسخه 2.0 با API v4 (اصلاح شده)
+ * کلاس شورت‌کدهای مستقل - نسخه 2.0 با API v4 (اصلاح شده - بدون لاگ)
  * 
  * @since 2.0.0
  */
@@ -28,7 +28,7 @@ class Standalone_GSheets_Shortcodes {
         add_shortcode('gsheet_user_data', [$this, 'user_data_shortcode']);
         add_shortcode('gsheet_cell', [$this, 'cell_data_shortcode']);
         add_shortcode('gsheet_user_field', [$this, 'user_field_shortcode']);
-        add_shortcode('gsheet_field', [$this, 'field_shortcode']); // اضافه شده
+        add_shortcode('gsheet_field', [$this, 'field_shortcode']);
         
         // شورت‌کدهای batch (ویژگی جدید API v4)
         add_shortcode('gsheet_user_data_batch', [$this, 'user_data_batch_shortcode']);
@@ -147,7 +147,7 @@ class Standalone_GSheets_Shortcodes {
     }
     
     /**
-     * شورت‌کد field اصلی (اضافه شده)
+     * شورت‌کد field اصلی (اصلاح شده برای prefix/suffix)
      */
     public function field_shortcode($atts) {
         $atts = shortcode_atts([
@@ -180,7 +180,16 @@ class Standalone_GSheets_Shortcodes {
             'icon' => '', // emoji or icon class
             'prefix' => '',
             'suffix' => '',
-            'wrapper' => 'span' // wrapper element
+            'wrapper' => 'span', // wrapper element
+            // جدید: استایل جداگانه برای prefix/suffix
+            'prefix_style' => '',
+            'suffix_style' => '',
+            'prefix_color' => '',
+            'suffix_color' => '',
+            'prefix_size' => '',
+            'suffix_size' => '',
+            'prefix_weight' => '',
+            'suffix_weight' => ''
         ], $atts, 'gsheet_field');
         
         $this->shortcode_stats['calls']++;
@@ -275,13 +284,12 @@ class Standalone_GSheets_Shortcodes {
             return '';
             
         } catch (Exception $e) {
-            error_log('Standalone GSheets: Error in field_shortcode: ' . $e->getMessage());
             return '';
         }
     }
     
     /**
-     * اعمال استایل به فیلد
+     * اعمال استایل به فیلد (اصلاح شده برای prefix/suffix)
      */
     private function apply_field_styling($value, $atts) {
         // انتخاب wrapper element
@@ -308,7 +316,86 @@ class Standalone_GSheets_Shortcodes {
             }
         }
         
-        // ساخت استایل inline
+        // ساخت استایل inline برای wrapper
+        $wrapper_style = $this->build_element_style($atts);
+        
+        // استایل‌های جداگانه برای prefix و suffix
+        $prefix_style = $this->build_prefix_suffix_style($atts, 'prefix');
+        $suffix_style = $this->build_prefix_suffix_style($atts, 'suffix');
+        
+        // اضافه کردن کلاس‌های CSS
+        $classes = ['gsheet-field'];
+        
+        if (!empty($atts['class'])) {
+            $classes[] = $atts['class'];
+        }
+        
+        if (!empty($atts['animate'])) {
+            $classes[] = 'gsheet-animate gsheet-animate-' . $atts['animate'];
+        }
+        
+        if ($atts['typography'] === 'badge') {
+            $wrapper_style .= 'display: inline-block; padding: 0.25em 0.6em; font-size: 0.875em; font-weight: 700; line-height: 1; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: 0.25rem;';
+            if (empty($atts['background'])) {
+                $wrapper_style .= 'background-color: #007cba;';
+            }
+            if (empty($atts['color'])) {
+                $wrapper_style .= 'color: #fff;';
+            }
+        }
+        
+        // ساخت HTML
+        $html = '<' . $wrapper;
+        
+        if (!empty($atts['id'])) {
+            $html .= ' id="' . esc_attr($atts['id']) . '"';
+        }
+        
+        if (!empty($classes)) {
+            $html .= ' class="' . esc_attr(implode(' ', $classes)) . '"';
+        }
+        
+        if (!empty($wrapper_style)) {
+            $html .= ' style="' . esc_attr($wrapper_style) . '"';
+        }
+        
+        $html .= '>';
+        
+        // اضافه کردن icon
+        if (!empty($atts['icon'])) {
+            $html .= '<span class="gsheet-field-icon">' . $atts['icon'] . '</span> ';
+        }
+        
+        // اضافه کردن prefix با استایل
+        if (!empty($atts['prefix'])) {
+            $html .= '<span class="gsheet-field-prefix"';
+            if (!empty($prefix_style)) {
+                $html .= ' style="' . esc_attr($prefix_style) . '"';
+            }
+            $html .= '>' . esc_html($atts['prefix']) . '</span>';
+        }
+        
+        // مقدار اصلی
+        $html .= '<span class="gsheet-field-value">' . esc_html($value) . '</span>';
+        
+        // اضافه کردن suffix با استایل
+        if (!empty($atts['suffix'])) {
+            $html .= '<span class="gsheet-field-suffix"';
+            if (!empty($suffix_style)) {
+                $html .= ' style="' . esc_attr($suffix_style) . '"';
+            }
+            $html .= '>' . esc_html($atts['suffix']) . '</span>';
+        }
+        
+        $html .= '</' . $wrapper . '>';
+        
+        return $html;
+    }
+    
+    /**
+     * ساخت استایل برای element اصلی
+     */
+    private function build_element_style($atts) {
         $style = '';
         
         if (!empty($atts['color'])) {
@@ -349,8 +436,8 @@ class Standalone_GSheets_Shortcodes {
         
         if (!empty($atts['align'])) {
             $style .= 'text-align: ' . $atts['align'] . ';';
-            if (in_array($wrapper, ['span', 'strong', 'em'])) {
-                $style .= 'display: block;'; // برای اعمال text-align به inline elements
+            if (in_array($atts['wrapper'] ?? 'span', ['span', 'strong', 'em'])) {
+                $style .= 'display: block;';
             }
         }
         
@@ -402,65 +489,63 @@ class Standalone_GSheets_Shortcodes {
             $style .= $atts['style'];
         }
         
-        // اضافه کردن کلاس‌های CSS
-        $classes = ['gsheet-field'];
+        return $style;
+    }
+    
+    /**
+     * ساخت استایل برای prefix یا suffix
+     */
+    private function build_prefix_suffix_style($atts, $type) {
+        $style = '';
         
-        if (!empty($atts['class'])) {
-            $classes[] = $atts['class'];
+        // رنگ
+        if (!empty($atts[$type . '_color'])) {
+            $style .= 'color: ' . $atts[$type . '_color'] . ';';
         }
         
-        if (!empty($atts['animate'])) {
-            $classes[] = 'gsheet-animate gsheet-animate-' . $atts['animate'];
-        }
-        
-        if ($atts['typography'] === 'badge') {
-            $style .= 'display: inline-block; padding: 0.25em 0.6em; font-size: 0.875em; font-weight: 700; line-height: 1; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: 0.25rem;';
-            if (empty($atts['background'])) {
-                $style .= 'background-color: #007cba;';
+        // اندازه فونت
+        if (!empty($atts[$type . '_size'])) {
+            switch ($atts[$type . '_size']) {
+                case 'small':
+                    $style .= 'font-size: 0.875em;';
+                    break;
+                case 'medium':
+                    $style .= 'font-size: 1em;';
+                    break;
+                case 'large':
+                    $style .= 'font-size: 1.25em;';
+                    break;
+                case 'xlarge':
+                    $style .= 'font-size: 1.5em;';
+                    break;
+                case 'xxlarge':
+                    $style .= 'font-size: 2em;';
+                    break;
+                default:
+                    if (is_numeric($atts[$type . '_size'])) {
+                        $style .= 'font-size: ' . $atts[$type . '_size'] . 'px;';
+                    }
             }
-            if (empty($atts['color'])) {
-                $style .= 'color: #fff;';
-            }
         }
         
-        // ساخت HTML
-        $html = '<' . $wrapper;
-        
-        if (!empty($atts['id'])) {
-            $html .= ' id="' . esc_attr($atts['id']) . '"';
+        // وزن فونت
+        if (!empty($atts[$type . '_weight'])) {
+            $style .= 'font-weight: ' . $atts[$type . '_weight'] . ';';
         }
         
-        if (!empty($classes)) {
-            $html .= ' class="' . esc_attr(implode(' ', $classes)) . '"';
+        // استایل سفارشی
+        if (!empty($atts[$type . '_style'])) {
+            $style .= $atts[$type . '_style'];
         }
         
-        if (!empty($style)) {
-            $html .= ' style="' . esc_attr($style) . '"';
+        // اضافه کردن فاصله پیش‌فرض
+        if ($type === 'prefix' && !empty($style)) {
+            $style .= 'margin-right: 0.25em;';
+        } elseif ($type === 'suffix' && !empty($style)) {
+            $style .= 'margin-left: 0.25em;';
         }
         
-        $html .= '>';
-        
-        // اضافه کردن icon
-        if (!empty($atts['icon'])) {
-            $html .= '<span class="gsheet-field-icon">' . $atts['icon'] . '</span> ';
-        }
-        
-        // اضافه کردن prefix
-        if (!empty($atts['prefix'])) {
-            $html .= '<span class="gsheet-field-prefix">' . esc_html($atts['prefix']) . '</span>';
-        }
-        
-        // مقدار اصلی
-        $html .= esc_html($value);
-        
-        // اضافه کردن suffix
-        if (!empty($atts['suffix'])) {
-            $html .= '<span class="gsheet-field-suffix">' . esc_html($atts['suffix']) . '</span>';
-        }
-        
-        $html .= '</' . $wrapper . '>';
-        
-        return $html;
+        return $style;
     }
     
     /**
@@ -647,14 +732,12 @@ class Standalone_GSheets_Shortcodes {
         // بررسی وجود پارامتر field
         if (empty($atts['field'])) {
             $this->shortcode_stats['errors']++;
-            error_log('Standalone GSheets: Empty field parameter in user_field_shortcode');
             return !empty($atts['default']) ? $atts['default'] : '';
         }
         
         // بررسی API
         if (!$this->api || !$this->api->is_ready()) {
             $this->shortcode_stats['errors']++;
-            error_log('Standalone GSheets: API not ready in user_field_shortcode');
             return !empty($atts['default']) ? $atts['default'] : '';
         }
         
@@ -825,14 +908,12 @@ class Standalone_GSheets_Shortcodes {
         // بررسی API
         if (!$this->api || !$this->api->is_ready()) {
             $this->shortcode_stats['errors']++;
-            error_log('Standalone GSheets: API not ready in get_field_value_by_variations');
             return $atts['default'] ?? '';
         }
         
         // دریافت Discord ID کاربر
         $discord_id = standalone_gsheets()->get_current_user_discord_id();
         if (!$discord_id) {
-            error_log('Standalone GSheets: Discord ID not found in get_field_value_by_variations');
             return $atts['default'] ?? '';
         }
         
@@ -840,7 +921,6 @@ class Standalone_GSheets_Shortcodes {
         $spreadsheet_id = $atts['spreadsheet_id'] ?? $this->get_db_setting('spreadsheet_id');
         if (empty($spreadsheet_id)) {
             $this->shortcode_stats['errors']++;
-            error_log('Standalone GSheets: No spreadsheet ID in get_field_value_by_variations');
             return $atts['default'] ?? '';
         }
         
@@ -873,7 +953,7 @@ class Standalone_GSheets_Shortcodes {
             if (empty($user_data)) {
                 $result = $atts['default'] ?? '';
                 if ($use_cache) {
-                    set_transient($cache_key, '', 60); // کش کوتاه‌مدت برای نتایج منفی
+                    set_transient($cache_key, '', 60);
                 }
                 return $result;
             }
@@ -928,7 +1008,6 @@ class Standalone_GSheets_Shortcodes {
             return $result;
             
         } catch (Exception $e) {
-            error_log('Standalone GSheets: Error getting field value: ' . $e->getMessage());
             $this->shortcode_stats['errors']++;
             return $atts['default'] ?? '';
         }
@@ -950,175 +1029,6 @@ class Standalone_GSheets_Shortcodes {
         }
         
         return $value;
-    }
-    
-    /**
-     * دریافت مقدار فیلد (اصلاح شده و بهبود یافته برای case-insensitive)
-     */
-    private function get_field_value($field_name, $atts = []) {
-        $this->shortcode_stats['calls']++;
-        
-        // بررسی API
-        if (!$this->api || !$this->api->is_ready()) {
-            $this->shortcode_stats['errors']++;
-            error_log('Standalone GSheets: API not ready in get_field_value');
-            return $atts['default'] ?? '';
-        }
-        
-        // دریافت Discord ID کاربر
-        $discord_id = standalone_gsheets()->get_current_user_discord_id();
-        if (!$discord_id) {
-            error_log('Standalone GSheets: Discord ID not found in get_field_value');
-            return $atts['default'] ?? '';
-        }
-        
-        // تنظیم آی‌دی اسپردشیت
-        $spreadsheet_id = $atts['spreadsheet_id'] ?? $this->get_db_setting('spreadsheet_id');
-        if (empty($spreadsheet_id)) {
-            $this->shortcode_stats['errors']++;
-            error_log('Standalone GSheets: No spreadsheet ID in get_field_value');
-            return $atts['default'] ?? '';
-        }
-        
-        // بررسی کش اگر فعال باشد
-        $use_cache = ($atts['cache'] ?? 'yes') === 'yes';
-        $cache_key = null;
-        
-        if ($use_cache) {
-            $cache_key = 'gsheet_field_single_' . md5($spreadsheet_id . '_' . $discord_id . '_' . $field_name);
-            $cached_value = get_transient($cache_key);
-            
-            if ($cached_value !== false) {
-                $this->shortcode_stats['cache_hits']++;
-                return $cached_value ?: ($atts['default'] ?? '');
-            }
-        }
-        
-        try {
-            $this->api->set_spreadsheet_id($spreadsheet_id);
-            $sheet_title = $atts['sheet'] ?? null;
-            $discord_id_column = $atts['discord_id_column'] ?? $this->get_db_setting('discord_id_column', 'Discord ID');
-            
-            $user_data = $this->api->find_user_by_discord_id(
-                $discord_id,
-                $sheet_title,
-                $discord_id_column,
-                $spreadsheet_id
-            );
-            
-            if (empty($user_data)) {
-                $result = $atts['default'] ?? '';
-                if ($use_cache) {
-                    set_transient($cache_key, '', 60); // کش کوتاه‌مدت برای نتایج منفی
-                }
-                return $result;
-            }
-            
-            // مرحله 1: جستجو با نام دقیق فیلد (exact match)
-            foreach ($user_data as $sheet_data) {
-                if (isset($sheet_data[$field_name])) {
-                    $result = $this->sanitize_field_value($sheet_data[$field_name]);
-                    if ($use_cache) {
-                        set_transient($cache_key, $result, $this->get_db_setting('cache_time', 300));
-                    }
-                    return $result;
-                }
-            }
-            
-            // مرحله 2: جستجو بدون حساسیت به بزرگی و کوچکی حروف (case-insensitive)
-            $field_name_lower = strtolower(trim($field_name));
-            
-            foreach ($user_data as $sheet_data) {
-                foreach ($sheet_data as $key => $value) {
-                    $key_lower = strtolower(trim($key));
-                    
-                    if ($key_lower === $field_name_lower) {
-                        $result = $this->sanitize_field_value($value);
-                        if ($use_cache) {
-                            set_transient($cache_key, $result, $this->get_db_setting('cache_time', 300));
-                        }
-                        return $result;
-                    }
-                }
-            }
-            
-            // مرحله 3: جستجو با تغییرات مختلف نام فیلد
-            $field_variations = $this->generate_field_variations($field_name);
-            
-            foreach ($user_data as $sheet_data) {
-                foreach ($field_variations as $variation) {
-                    if (isset($sheet_data[$variation])) {
-                        $result = $this->sanitize_field_value($sheet_data[$variation]);
-                        if ($use_cache) {
-                            set_transient($cache_key, $result, $this->get_db_setting('cache_time', 300));
-                        }
-                        return $result;
-                    }
-                }
-            }
-            
-            // مرحله 4: جستجو با case-insensitive برای تغییرات نام فیلد
-            foreach ($user_data as $sheet_data) {
-                foreach ($sheet_data as $key => $value) {
-                    $key_lower = strtolower(trim($key));
-                    
-                    foreach ($field_variations as $variation) {
-                        $variation_lower = strtolower(trim($variation));
-                        
-                        if ($key_lower === $variation_lower) {
-                            $result = $this->sanitize_field_value($value);
-                            if ($use_cache) {
-                                set_transient($cache_key, $result, $this->get_db_setting('cache_time', 300));
-                            }
-                            return $result;
-                        }
-                    }
-                }
-            }
-            
-            // مرحله 5: جستجو با partial matching (تطبیق جزئی)
-            foreach ($user_data as $sheet_data) {
-                foreach ($sheet_data as $key => $value) {
-                    $key_lower = strtolower(trim($key));
-                    
-                    // چک کردن اگر فیلد مورد نظر یا تغییرات آن شامل کلید موجود باشد یا برعکس
-                    if (stripos($key_lower, $field_name_lower) !== false || 
-                        stripos($field_name_lower, $key_lower) !== false) {
-                        $result = $this->sanitize_field_value($value);
-                        if ($use_cache) {
-                            set_transient($cache_key, $result, $this->get_db_setting('cache_time', 300));
-                        }
-                        return $result;
-                    }
-                    
-                    // چک کردن تغییرات فیلد با partial matching
-                    foreach ($field_variations as $variation) {
-                        $variation_lower = strtolower(trim($variation));
-                        
-                        if (stripos($key_lower, $variation_lower) !== false || 
-                            stripos($variation_lower, $key_lower) !== false) {
-                            $result = $this->sanitize_field_value($value);
-                            if ($use_cache) {
-                                set_transient($cache_key, $result, $this->get_db_setting('cache_time', 300));
-                            }
-                            return $result;
-                        }
-                    }
-                }
-            }
-            
-            // اگر هیچ مطابقتی یافت نشد، مقدار پیش‌فرض را برگردان
-            $result = $atts['default'] ?? '';
-            if ($use_cache) {
-                set_transient($cache_key, '', 60);
-            }
-            return $result;
-            
-        } catch (Exception $e) {
-            error_log('Standalone GSheets: Error getting field value: ' . $e->getMessage());
-            $this->shortcode_stats['errors']++;
-            return $atts['default'] ?? '';
-        }
     }
     
     /**
@@ -1254,6 +1164,171 @@ class Standalone_GSheets_Shortcodes {
         } catch (Exception $e) {
             $this->shortcode_stats['errors']++;
             return '<p style="color: red;">Error loading data: ' . esc_html($e->getMessage()) . '</p>';
+        }
+    }
+    
+    /**
+     * دریافت مقدار فیلد (اصلاح شده و بهبود یافته برای case-insensitive)
+     */
+    private function get_field_value($field_name, $atts = []) {
+        $this->shortcode_stats['calls']++;
+        
+        // بررسی API
+        if (!$this->api || !$this->api->is_ready()) {
+            $this->shortcode_stats['errors']++;
+            return $atts['default'] ?? '';
+        }
+        
+        // دریافت Discord ID کاربر
+        $discord_id = standalone_gsheets()->get_current_user_discord_id();
+        if (!$discord_id) {
+            return $atts['default'] ?? '';
+        }
+        
+        // تنظیم آی‌دی اسپردشیت
+        $spreadsheet_id = $atts['spreadsheet_id'] ?? $this->get_db_setting('spreadsheet_id');
+        if (empty($spreadsheet_id)) {
+            $this->shortcode_stats['errors']++;
+            return $atts['default'] ?? '';
+        }
+        
+        // بررسی کش اگر فعال باشد
+        $use_cache = ($atts['cache'] ?? 'yes') === 'yes';
+        $cache_key = null;
+        
+        if ($use_cache) {
+            $cache_key = 'gsheet_field_single_' . md5($spreadsheet_id . '_' . $discord_id . '_' . $field_name);
+            $cached_value = get_transient($cache_key);
+            
+            if ($cached_value !== false) {
+                $this->shortcode_stats['cache_hits']++;
+                return $cached_value ?: ($atts['default'] ?? '');
+            }
+        }
+        
+        try {
+            $this->api->set_spreadsheet_id($spreadsheet_id);
+            $sheet_title = $atts['sheet'] ?? null;
+            $discord_id_column = $atts['discord_id_column'] ?? $this->get_db_setting('discord_id_column', 'Discord ID');
+            
+            $user_data = $this->api->find_user_by_discord_id(
+                $discord_id,
+                $sheet_title,
+                $discord_id_column,
+                $spreadsheet_id
+            );
+            
+            if (empty($user_data)) {
+                $result = $atts['default'] ?? '';
+                if ($use_cache) {
+                    set_transient($cache_key, '', 60);
+                }
+                return $result;
+            }
+            
+            // مرحله 1: جستجو با نام دقیق فیلد (exact match)
+            foreach ($user_data as $sheet_data) {
+                if (isset($sheet_data[$field_name])) {
+                    $result = $this->sanitize_field_value($sheet_data[$field_name]);
+                    if ($use_cache) {
+                        set_transient($cache_key, $result, $this->get_db_setting('cache_time', 300));
+                    }
+                    return $result;
+                }
+            }
+            
+            // مرحله 2: جستجو بدون حساسیت به بزرگی و کوچکی حروف (case-insensitive)
+            $field_name_lower = strtolower(trim($field_name));
+            
+            foreach ($user_data as $sheet_data) {
+                foreach ($sheet_data as $key => $value) {
+                    $key_lower = strtolower(trim($key));
+                    
+                    if ($key_lower === $field_name_lower) {
+                        $result = $this->sanitize_field_value($value);
+                        if ($use_cache) {
+                            set_transient($cache_key, $result, $this->get_db_setting('cache_time', 300));
+                        }
+                        return $result;
+                    }
+                }
+            }
+            
+            // مرحله 3: جستجو با تغییرات مختلف نام فیلد
+            $field_variations = $this->generate_field_variations($field_name);
+            
+            foreach ($user_data as $sheet_data) {
+                foreach ($field_variations as $variation) {
+                    if (isset($sheet_data[$variation])) {
+                        $result = $this->sanitize_field_value($sheet_data[$variation]);
+                        if ($use_cache) {
+                            set_transient($cache_key, $result, $this->get_db_setting('cache_time', 300));
+                        }
+                        return $result;
+                    }
+                }
+            }
+            
+            // مرحله 4: جستجو با case-insensitive برای تغییرات نام فیلد
+            foreach ($user_data as $sheet_data) {
+                foreach ($sheet_data as $key => $value) {
+                    $key_lower = strtolower(trim($key));
+                    
+                    foreach ($field_variations as $variation) {
+                        $variation_lower = strtolower(trim($variation));
+                        
+                        if ($key_lower === $variation_lower) {
+                            $result = $this->sanitize_field_value($value);
+                            if ($use_cache) {
+                                set_transient($cache_key, $result, $this->get_db_setting('cache_time', 300));
+                            }
+                            return $result;
+                        }
+                    }
+                }
+            }
+            
+            // مرحله 5: جستجو با partial matching (تطبیق جزئی)
+            foreach ($user_data as $sheet_data) {
+                foreach ($sheet_data as $key => $value) {
+                    $key_lower = strtolower(trim($key));
+                    
+                    // چک کردن اگر فیلد مورد نظر یا تغییرات آن شامل کلید موجود باشد یا برعکس
+                    if (stripos($key_lower, $field_name_lower) !== false || 
+                        stripos($field_name_lower, $key_lower) !== false) {
+                        $result = $this->sanitize_field_value($value);
+                        if ($use_cache) {
+                            set_transient($cache_key, $result, $this->get_db_setting('cache_time', 300));
+                        }
+                        return $result;
+                    }
+                    
+                    // چک کردن تغییرات فیلد با partial matching
+                    foreach ($field_variations as $variation) {
+                        $variation_lower = strtolower(trim($variation));
+                        
+                        if (stripos($key_lower, $variation_lower) !== false || 
+                            stripos($variation_lower, $key_lower) !== false) {
+                            $result = $this->sanitize_field_value($value);
+                            if ($use_cache) {
+                                set_transient($cache_key, $result, $this->get_db_setting('cache_time', 300));
+                            }
+                            return $result;
+                        }
+                    }
+                }
+            }
+            
+            // اگر هیچ مطابقتی یافت نشد، مقدار پیش‌فرض را برگردان
+            $result = $atts['default'] ?? '';
+            if ($use_cache) {
+                set_transient($cache_key, '', 60);
+            }
+            return $result;
+            
+        } catch (Exception $e) {
+            $this->shortcode_stats['errors']++;
+            return $atts['default'] ?? '';
         }
     }
     
