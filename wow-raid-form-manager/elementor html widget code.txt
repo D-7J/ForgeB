@@ -1,0 +1,1095 @@
+<div class="dashboard-schedule-content">
+    <div class="schedule-header">
+        <h2>Raid Scheduler</h2>
+        <p>Create and manage your raid schedules</p>
+    </div>
+    
+    <div class="schedule-grid">
+        <div class="upcoming-raids" id="upcoming-raids-container">
+            <h3>Your Raids <span id="raid-count" style="font-size: 14px; color: #999;"></span></h3>
+            <div class="raids-controls" style="margin-bottom: 15px;">
+                <button id="toggle-past-raids" onclick="togglePastRaids()" style="background: #666; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px;">
+                    <i class="fas fa-eye"></i> Show Past Raids
+                </button>
+                <button onclick="loadRaids()" style="background: #5bc0de; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; margin-left: 5px;">
+                    <i class="fas fa-sync"></i> Refresh
+                </button>
+            </div>
+            <div id="raids-content">
+                <p>Loading raids...</p>
+            </div>
+            <div id="debug-panel" style="display:none; margin-top: 10px;">
+                <button onclick="runDebugTest()" style="background: #ff6b35; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Run Debug Test</button>
+                <button onclick="checkTable()" style="background: #5bc0de; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-left: 5px;">Check Database</button>
+                <button onclick="getAllRaids()" style="background: #9370db; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-left: 5px;">Show All Raids</button>
+                <button onclick="manualRefresh()" style="background: #5cb85c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-left: 5px;">Refresh Raids</button>
+                <button onclick="clearDebugLog()" style="background: #f0ad4e; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-left: 5px;">Clear Log</button>
+            </div>
+            <div id="debug-info" style="display:none; margin-top: 10px; padding: 10px; background: rgba(255,0,0,0.1); border: 1px solid red; color: #ff6666; font-size: 12px; font-family: monospace; white-space: pre-wrap;"></div>
+        </div>
+        
+        <div class="create-raid-section">
+            [wow_raid_form]
+        </div>
+    </div>
+</div>
+
+<script>
+jQuery(document).ready(function($) {
+    console.log("Raids loader started");
+    
+    var ajaxUrl = window.location.origin + '/wp-admin/admin-ajax.php';
+    console.log('Using AJAX URL:', ajaxUrl);
+    
+    var debugMode = false;
+    
+    if (debugMode) {
+        $('#debug-panel').show();
+        $('#debug-info').show();
+        $('#debug-info').html('Debug Mode Active - AJAX URL: ' + ajaxUrl);
+    }
+    
+    window.runDebugTest = function() {
+        $('#debug-info').append('\n\nRunning debug test...');
+        
+        $.ajax({
+            url: ajaxUrl,
+            type: 'POST',
+            data: { action: 'wow_raid_debug' },
+            success: function(response) {
+                $('#debug-info').append('\n\nDebug Info:');
+                $('#debug-info').append('\n' + JSON.stringify(response.data, null, 2));
+            },
+            error: function(xhr, status, error) {
+                $('#debug-info').append('\n\nDebug Error: ' + error);
+                $('#debug-info').append('\nStatus: ' + xhr.status);
+            }
+        });
+    }
+    
+    window.showAllRaidsAdmin = function() {
+        $('#debug-info').append('\n\nFetching ALL raids (Admin View)...');
+        $('#raids-content').html('<p>Loading all raids...</p>');
+        
+        $.ajax({
+            url: ajaxUrl,
+            type: 'POST',
+            data: { 
+                action: 'get_user_raids',
+                show_all_raids: 'true'
+            },
+            success: function(response) {
+                if (response.success && response.data && response.data.raids) {
+                    var html = '<div class="raids-list">';
+                    html += '<div style="background: #9370db; color: white; padding: 10px; margin-bottom: 10px; border-radius: 4px;">';
+                    html += '<strong>Admin View - Showing ALL Raids (' + response.data.raids.length + ' total)</strong>';
+                    html += '</div>';
+                    
+                    response.data.raids.forEach(function(raid) {
+                        html += createRaidHTML(raid);
+                    });
+                    
+                    html += '</div>';
+                    html += '<div style="margin-top: 15px; text-align: center;">';
+                    html += '<button onclick="loadRaids()" style="background: #5bc0de; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Back to My Raids</button>';
+                    html += '</div>';
+                    
+                    $('#raids-content').html(html);
+                    
+                    $('#view-all-users-btn').hide();
+                    
+                    bindActionButtons();
+                }
+            },
+            error: function(xhr, status, error) {
+                $('#debug-info').append('\n\nError fetching all raids: ' + error);
+                $('#raids-content').html('<p style="color: #dc3545;">Failed to load all raids.</p>');
+            }
+        });
+    }
+    
+    window.checkTable = function() {
+        $('#debug-info').append('\n\nChecking database...');
+        
+        $.ajax({
+            url: ajaxUrl,
+            type: 'POST',
+            data: { action: 'test_raid_system' },
+            success: function(response) {
+                $('#debug-info').append('\n\nDatabase Check:');
+                $('#debug-info').append('\nTable exists: ' + (response.data.table_exists ? 'Yes' : 'No'));
+                $('#debug-info').append('\nTotal raids: ' + response.data.total_raids);
+                $('#debug-info').append('\nAJAX URL: ' + response.data.ajax_url);
+            },
+            error: function(xhr, status, error) {
+                $('#debug-info').append('\n\nDatabase Check Error: ' + error);
+            }
+        });
+    }
+    
+    window.manualRefresh = function() {
+        $('#debug-info').append('\n\nManual refresh triggered...');
+        loadRaids();
+    }
+    
+    window.clearDebugLog = function() {
+        $('#debug-info').html('Debug log cleared at ' + new Date().toLocaleTimeString());
+    }
+    
+    window.getAllRaids = function() {
+        $('#debug-info').append('\n\nFetching all raids from database...');
+        
+        $.ajax({
+            url: ajaxUrl,
+            type: 'POST',
+            data: { 
+                action: 'get_user_raids',
+                debug_mode: 'true'
+            },
+            success: function(response) {
+                $('#debug-info').append('\n\n=== ALL RAIDS DEBUG INFO ===');
+                $('#debug-info').append('\nTotal raids in DB: ' + response.data.all_raids_count);
+                $('#debug-info').append('\nYour raids count: ' + response.data.user_raids_count);
+                $('#debug-info').append('\nYour user ID: ' + response.data.current_user_id);
+                $('#debug-info').append('\nTable name: ' + response.data.table_name);
+                
+                if (response.data.recent_raids && response.data.recent_raids.length > 0) {
+                    $('#debug-info').append('\n\nRecent raids in database:');
+                    response.data.recent_raids.forEach(function(raid, index) {
+                        $('#debug-info').append('\n\n' + (index + 1) + '. ' + raid.raid_name + ' (' + raid.difficulty + ')');
+                        $('#debug-info').append('\n   Date: ' + raid.raid_date + ' ' + raid.raid_hour + ':' + raid.raid_minute);
+                        $('#debug-info').append('\n   Created by user ID: ' + raid.created_by);
+                        $('#debug-info').append('\n   Status: ' + raid.status);
+                    });
+                } else {
+                    $('#debug-info').append('\n\nNo raids found in database!');
+                }
+            },
+            error: function(xhr, status, error) {
+                $('#debug-info').append('\n\nError fetching all raids: ' + error);
+            }
+        });
+    }
+    
+    var showPastRaids = false;
+    
+    window.togglePastRaids = function() {
+        showPastRaids = !showPastRaids;
+        var $btn = $('#toggle-past-raids');
+        
+        if (showPastRaids) {
+            $btn.html('<i class="fas fa-eye-slash"></i> Hide Past Raids');
+            $('.raid-item.status-done, .raid-item.status-cancelled').show();
+            $('h4:contains("Past Raids")').show();
+        } else {
+            $btn.html('<i class="fas fa-eye"></i> Show Past Raids');
+            $('.raid-item.status-done, .raid-item.status-cancelled').hide();
+            $('h4:contains("Past Raids")').hide();
+        }
+    }
+    
+    var loadAttempts = 0;
+    var maxAttempts = 3;
+    
+    window.loadRaids = function() {
+        console.log('loadRaids called');
+        
+        if (loadAttempts === 0) {
+            $('#raids-content').html('<p>Loading raids...</p>');
+        }
+        
+        $.ajax({
+            url: ajaxUrl,
+            type: 'POST',
+            data: { 
+                action: 'get_user_raids'
+            },
+            timeout: 15000,
+            success: function(response) {
+                console.log('Ajax Success:', response);
+                loadAttempts = 0;
+                
+                var content = $('#raids-content');
+                
+                if (debugMode) {
+                    $('#debug-info').append('\n\nResponse received at ' + new Date().toLocaleTimeString() + ':');
+                    $('#debug-info').append('\nSuccess: ' + response.success);
+                    $('#debug-info').append('\nRaids count: ' + (response.data && response.data.raids ? response.data.raids.length : 0));
+                    $('#debug-info').append('\nUser ID: ' + (response.data ? response.data.user_id : 'N/A'));
+                }
+                
+                if (response.success && response.data) {
+                    if (response.data.message && (!response.data.raids || response.data.raids.length === 0)) {
+                        content.html('<p>' + response.data.message + '</p>');
+                        return;
+                    }
+                    
+                    if (response.data.raids && response.data.raids.length > 0) {
+                        var html = '<div class="raids-list">';
+                        
+                        $('#raid-count').text('(' + response.data.raids.length + ' total)');
+                        
+                        var upcomingRaids = [];
+                        var pastRaids = [];
+                        
+                        response.data.raids.forEach(function(raid) {
+                            if (raid.status === 'done' || raid.status === 'cancelled') {
+                                pastRaids.push(raid);
+                            } else {
+                                upcomingRaids.push(raid);
+                            }
+                        });
+                        
+                        if (upcomingRaids.length > 0) {
+                            html += '<h4 style="color: #ff6b35; margin-bottom: 10px; border-bottom: 1px solid #ff6b35; padding-bottom: 5px;">Upcoming Raids</h4>';
+                            upcomingRaids.forEach(function(raid) {
+                                html += createRaidHTML(raid);
+                            });
+                        }
+                        
+                        if (pastRaids.length > 0) {
+                            html += '<h4 style="color: #999; margin-top: 20px; margin-bottom: 10px; border-bottom: 1px solid #666; padding-bottom: 5px;">Past Raids</h4>';
+                            pastRaids.forEach(function(raid) {
+                                html += createRaidHTML(raid);
+                            });
+                        }
+                        
+                        html += '</div>';
+                        content.html(html);
+                        
+                        if (!showPastRaids) {
+                            $('.raid-item.status-done, .raid-item.status-cancelled').hide();
+                            $('h4:contains("Past Raids")').hide();
+                        }
+                        
+                        if (response.data.is_admin) {
+                            if ($('#view-all-users-btn').length) {
+                                $('#view-all-users-btn').show();
+                            } else {
+                                $('.raids-controls').append(
+                                    '<button id="view-all-users-btn" onclick="showAllRaidsAdmin()" style="background: #9370db; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; margin-left: 5px;">' +
+                                    '<i class="fas fa-users"></i> View All Users' +
+                                    '</button>'
+                                );
+                            }
+                        }
+                        
+                        bindActionButtons();
+                    } else {
+                        content.html('<div style="text-align: center; padding: 20px;">' +
+                            '<p style="font-size: 18px; color: #ff6b35;">No raids scheduled yet!</p>' +
+                            '<p style="color: #ccc;">Use the form on the right to create your first raid.</p>' +
+                            '<p style="margin-top: 10px;"><small style="color: #999;">Debug: User ID ' + response.data.user_id + ' | Admin: ' + response.data.is_admin + '</small></p>' +
+                            (response.data.is_admin ? '<button onclick="showAllRaidsAdmin()" style="margin-top: 15px; background: #9370db; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Show All Raids (Admin)</button>' : '') +
+                            '</div>');
+                        
+                        if (debugMode) {
+                            $('#debug-info').append('\n\nNo raids found for current user.');
+                        }
+                    }
+                } else {
+                    var errorMsg = response.data ? response.data : 'Unknown error occurred';
+                    content.html('<p style="color: #dc3545;">Error: ' + errorMsg + '</p>');
+                    $('#debug-info').show().html('Response: ' + JSON.stringify(response));
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Ajax Error:', {
+                    status: xhr.status,
+                    statusText: xhr.statusText,
+                    responseText: xhr.responseText,
+                    error: error
+                });
+                
+                loadAttempts++;
+                
+                var errorMsg = 'Error loading raids.';
+                
+                if (xhr.status === 0) {
+                    if (!navigator.onLine) {
+                        errorMsg = 'You are offline. Please check your internet connection.';
+                    } else {
+                        errorMsg = 'Connection error. Please check if the site is accessible.';
+                    }
+                } else if (xhr.status === 404) {
+                    errorMsg = 'Ajax endpoint not found. URL: ' + ajaxUrl;
+                } else if (xhr.status === 500) {
+                    errorMsg = 'Server error. Please check WordPress error logs.';
+                    
+                    if (xhr.responseText) {
+                        $('#debug-info').show().html('Server Response:<br>' + xhr.responseText.substring(0, 500));
+                    }
+                }
+                
+                $('#raids-content').html('<p style="color: #dc3545;">' + errorMsg + '</p>');
+                
+                if (loadAttempts < maxAttempts && navigator.onLine && xhr.status !== 404) {
+                    setTimeout(function() {
+                        $('#raids-content').html('<p>Retrying... (Attempt ' + (loadAttempts + 1) + '/' + maxAttempts + ')</p>');
+                        loadRaids();
+                    }, 3000);
+                } else {
+                    $('#raids-content').append('<br><button onclick="location.reload()" style="margin-top: 10px;">Refresh Page</button>');
+                }
+            }
+        });
+    }
+    
+    function createRaidHTML(raid) {
+        var statusClass = 'status-' + raid.status;
+        var statusText = raid.status.charAt(0).toUpperCase() + raid.status.slice(1);
+        
+        var statusIcon = '';
+        if (raid.status === 'upcoming') {
+            statusText = 'Upcoming';
+            statusIcon = '<i class="fas fa-clock status-icon"></i>';
+        } else if (raid.status === 'done') {
+            statusText = 'Done';
+            statusIcon = '<i class="fas fa-check-circle status-icon"></i>';
+        } else if (raid.status === 'cancelled') {
+            statusText = 'Cancelled';
+            statusIcon = '<i class="fas fa-times-circle status-icon"></i>';
+        } else if (raid.status === 'locked') {
+            statusText = 'Locked';
+            statusIcon = '<i class="fas fa-lock status-icon"></i>';
+        } else if (raid.status === 'delayed') {
+            statusText = 'Delayed';
+            statusIcon = '<i class="fas fa-exclamation-triangle status-icon"></i>';
+        }
+        
+        var html = '<div class="raid-item ' + statusClass + '" data-raid-id="' + raid.id + '">';
+        
+        html += '<div class="raid-header">';
+        html += '<span class="raid-name">' + raid.name + '</span>';
+        html += '<span class="raid-status ' + statusClass + '">' + statusIcon + statusText + '</span>';
+        html += '</div>';
+        
+        html += '<div class="raid-datetime">';
+        html += '<i class="fas fa-calendar"></i> ' + raid.date + ' @ ' + raid.time;
+        html += '</div>';
+        
+        html += '<div class="raid-details">';
+        html += '<span class="raid-difficulty difficulty-' + raid.difficulty.toLowerCase() + '">' + raid.difficulty + '</span>';
+        html += '<span class="raid-loot loot-' + raid.loot_type.toLowerCase().replace(/\s/g, '') + '">' + raid.loot_type + '</span>';
+        html += '<span class="raid-bosses"><i class="fas fa-skull"></i> ' + raid.boss_count + '/8 Bosses</span>';
+        html += '<span class="raid-spots"><i class="fas fa-users"></i> ' + raid.spots + ' spots</span>';
+        html += '</div>';
+        
+        html += '<div class="raid-leaders">';
+        html += '<div class="leader-info"><strong>RL:</strong> ' + raid.leader + '</div>';
+        html += '<div class="leader-info"><strong>GC:</strong> ' + raid.gold_collector + '</div>';
+        html += '</div>';
+        
+        if (raid.can_edit) {
+            html += '<div class="raid-actions">';
+            
+            if (raid.status !== 'done' && raid.status !== 'cancelled') {
+                
+                if (!raid.is_locked) {
+                    html += '<button class="btn-edit" data-raid-id="' + raid.id + '"><i class="fas fa-edit"></i> Edit</button>';
+                }
+                
+                if (raid.is_locked) {
+                    html += '<button class="btn-unlock" data-raid-id="' + raid.id + '"><i class="fas fa-unlock"></i> Unlock</button>';
+                } else {
+                    html += '<button class="btn-lock" data-raid-id="' + raid.id + '"><i class="fas fa-lock"></i> Lock</button>';
+                }
+                
+                if (raid.is_past_time || raid.is_locked) {
+                    html += '<button class="btn-done" data-raid-id="' + raid.id + '"><i class="fas fa-check-circle"></i> Mark as Done</button>';
+                }
+                
+                html += '<button class="btn-cancel" data-raid-id="' + raid.id + '"><i class="fas fa-times"></i> Cancel</button>';
+            }
+            
+            html += '</div>';
+        }
+        
+        if (raid.is_past_time && raid.status !== 'done' && raid.status !== 'cancelled') {
+            html += '<div style="background: rgba(255, 107, 53, 0.1); color: #ff6b35; padding: 5px; margin-top: 8px; border-radius: 4px; font-size: 12px; text-align: center;">';
+            html += '<i class="fas fa-clock"></i> This raid has already passed';
+            html += '</div>';
+        }
+        
+        html += '</div>';
+        
+        return html;
+    }
+    
+    function bindActionButtons() {
+        $('.btn-lock, .btn-unlock').off('click').on('click', function() {
+            var btn = $(this);
+            var raidId = btn.data('raid-id');
+            var newStatus = btn.hasClass('btn-lock') ? 'locked' : 'active';
+            
+            btn.prop('disabled', true).css('opacity', '0.5');
+            
+            $.post(ajaxUrl, {
+                action: 'update_raid_status',
+                raid_id: raidId,
+                status: newStatus
+            })
+            .done(function(response) {
+                if (response.success) {
+                    var msg = newStatus === 'locked' ? 'Raid locked!' : 'Raid unlocked!';
+                    showNotification(msg, 'success');
+                    loadRaids();
+                } else {
+                    showNotification(response.data, 'error');
+                    btn.prop('disabled', false).css('opacity', '1');
+                }
+            })
+            .fail(function() {
+                showNotification('Failed to update raid status.', 'error');
+                btn.prop('disabled', false).css('opacity', '1');
+            });
+        });
+        
+        $('.btn-done').off('click').on('click', function() {
+            var btn = $(this);
+            var raidId = btn.data('raid-id');
+            
+            btn.prop('disabled', true).css('opacity', '0.5');
+            
+            $.post(ajaxUrl, {
+                action: 'update_raid_status',
+                raid_id: raidId,
+                status: 'done'
+            })
+            .done(function(response) {
+                if (response.success) {
+                    showNotification('Raid marked as done!', 'success');
+                    loadRaids();
+                } else {
+                    showNotification(response.data, 'error');
+                    btn.prop('disabled', false).css('opacity', '1');
+                }
+            })
+            .fail(function() {
+                showNotification('Failed to update raid status.', 'error');
+                btn.prop('disabled', false).css('opacity', '1');
+            });
+        });
+        
+        $('.btn-cancel').off('click').on('click', function() {
+            var btn = $(this);
+            var raidId = btn.data('raid-id');
+            
+            if (!confirm('Are you sure you want to cancel this raid?')) {
+                return;
+            }
+            
+            btn.prop('disabled', true).css('opacity', '0.5');
+            
+            $.post(ajaxUrl, {
+                action: 'update_raid_status',
+                raid_id: raidId,
+                status: 'cancelled'
+            })
+            .done(function(response) {
+                if (response.success) {
+                    showNotification('Raid cancelled successfully!', 'success');
+                    loadRaids();
+                } else {
+                    showNotification(response.data, 'error');
+                    btn.prop('disabled', false).css('opacity', '1');
+                }
+            })
+            .fail(function() {
+                showNotification('Failed to cancel raid.', 'error');
+                btn.prop('disabled', false).css('opacity', '1');
+            });
+        });
+        
+        $('.btn-edit').off('click').on('click', function() {
+            var raidId = $(this).data('raid-id');
+            showNotification('Edit functionality coming soon!', 'info');
+        });
+    }
+    
+    function showNotification(message, type) {
+        var color = type === 'success' ? '#5cb85c' : 
+                   (type === 'error' ? '#dc3545' : 
+                   (type === 'warning' ? '#f0ad4e' : '#5bc0de'));
+        
+        var notification = $('<div class="raid-notification">' + message + '</div>');
+        notification.css({
+            'position': 'fixed',
+            'top': '20px',
+            'right': '20px',
+            'padding': '10px 20px',
+            'background': color,
+            'color': 'white',
+            'border-radius': '4px',
+            'z-index': '9999',
+            'font-weight': 'bold',
+            'box-shadow': '0 2px 5px rgba(0,0,0,0.3)'
+        });
+        
+        $('body').append(notification);
+        
+        setTimeout(function() {
+            notification.fadeOut(300, function() {
+                notification.remove();
+            });
+        }, 3000);
+    }
+    
+    function testConnection() {
+        if (debugMode) {
+            $.ajax({
+                url: ajaxUrl,
+                type: 'POST',
+                data: { action: 'test_raid_system' },
+                timeout: 5000,
+                success: function(response) {
+                    $('#debug-info').append('\n\nConnection test successful');
+                },
+                error: function(xhr, status, error) {
+                    $('#debug-info').show().html('Connection test failed. Check console for details.');
+                }
+            });
+        }
+    }
+    
+    setTimeout(function() {
+        loadRaids();
+        
+        if (debugMode) {
+            testConnection();
+            $('#debug-info').append('\n\n=== INITIAL SYSTEM CHECK ===');
+            checkTable();
+            setTimeout(function() {
+                $('#debug-info').append('\n\n=== CHECKING FOR ALL RAIDS ===');
+                getAllRaids();
+            }, 2000);
+        }
+    }, 500);
+    
+    var autoRefreshEnabled = true;
+    var refreshInterval;
+    
+    if (autoRefreshEnabled) {
+        refreshInterval = setInterval(function() {
+            if (!document.hidden) {
+                loadRaids();
+            }
+        }, 60000);
+    }
+    
+    window.addEventListener('online', function() {
+        showNotification('Connection restored!', 'success');
+        loadAttempts = 0;
+        loadRaids();
+    });
+    
+    window.addEventListener('offline', function() {
+        showNotification('You are offline. Some features may not work.', 'warning');
+    });
+    
+    $(document).on('raid_created', function() {
+        console.log('Raid created event received');
+        setTimeout(loadRaids, 1000);
+    });
+});
+</script>
+
+<style>
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
+
+.dashboard-schedule-content {
+    padding: 20px;
+}
+
+.schedule-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.schedule-header h2 {
+    color: #ff6b35;
+    font-size: 28px;
+    margin-bottom: 10px;
+}
+
+.schedule-header p {
+    color: #ccc;
+    font-size: 16px;
+}
+
+.schedule-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+@media (max-width: 768px) {
+    .schedule-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .create-raid-section {
+        order: 1;
+    }
+    
+    .upcoming-raids {
+        order: 2;
+    }
+}
+
+.upcoming-raids {
+    background: rgba(64, 64, 64, 0.8);
+    border: 1px solid #555;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.upcoming-raids h3 {
+    color: #ff6b35;
+    border-bottom: 2px solid #ff6b35;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.raids-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.raid-item {
+    background: rgba(40, 40, 40, 0.9);
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 15px;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.raid-item:hover {
+    border-color: #ff6b35;
+    box-shadow: 0 2px 8px rgba(255, 107, 53, 0.2);
+}
+
+.raid-item.status-locked {
+    border-color: #f0ad4e;
+    background: rgba(40, 40, 40, 0.95);
+}
+
+.raid-item.status-delayed {
+    border-color: #f0ad4e;
+    background: rgba(40, 40, 40, 0.95);
+}
+
+.raid-item.status-upcoming {
+    border-color: #5cb85c;
+}
+
+.raid-item.status-done {
+    opacity: 0.7;
+    border-color: #5cb85c;
+    background: rgba(40, 167, 69, 0.1);
+}
+
+.raid-item.status-cancelled {
+    opacity: 0.7;
+    border-color: #dc3545;
+    background: rgba(220, 53, 69, 0.1);
+}
+
+.raid-item.status-cancelled .raid-name {
+    color: #dc3545;
+    text-decoration: line-through;
+}
+
+.raid-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.raid-name {
+    color: #ff6b35;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.raid-status {
+    padding: 3px 10px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.status-icon {
+    font-size: 14px;
+    margin-right: 0;
+}
+
+.status-upcoming {
+    background: transparent;
+    border: 1px solid #5cb85c;
+    color: #5cb85c;
+}
+
+.status-upcoming .status-icon {
+    color: #5cb85c;
+}
+
+.status-locked {
+    background: transparent;
+    border: 1px solid #f0ad4e;
+    color: #f0ad4e;
+}
+
+.status-locked .status-icon {
+    color: #f0ad4e;
+}
+
+.status-delayed {
+    background: transparent;
+    border: 1px solid #f0ad4e;
+    color: #f0ad4e;
+}
+
+.status-delayed .status-icon {
+    color: #f0ad4e;
+}
+
+.status-done {
+    background: transparent;
+    border: 1px solid #5cb85c;
+    color: #5cb85c;
+}
+
+.status-done .status-icon {
+    color: #5cb85c;
+}
+
+.status-cancelled {
+    background: transparent;
+    border: 1px solid #dc3545;
+    color: #dc3545;
+}
+
+.status-cancelled .status-icon {
+    color: #dc3545;
+}
+
+.raid-datetime {
+    color: #ccc;
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+.raid-datetime i {
+    margin-right: 5px;
+}
+
+.raid-details {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.raid-details span {
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.raid-difficulty {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.difficulty-normal {
+    color: #aaa;
+}
+
+.difficulty-heroic {
+    color: #5bc0de;
+}
+
+.difficulty-mythic {
+    color: #ff6b35;
+}
+
+.raid-loot {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.loot-saved {
+    color: #5cb85c;
+}
+
+.loot-unsaved {
+    color: #d9534f;
+}
+
+.loot-vip {
+    color: #f0ad4e;
+}
+
+.raid-bosses {
+    background: rgba(147, 112, 219, 0.2);
+    color: #9370db;
+}
+
+.raid-spots {
+    background: rgba(91, 192, 222, 0.2);
+    color: #5bc0de;
+}
+
+.raid-leaders {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+}
+
+.leader-info {
+    color: #ccc;
+    font-size: 13px;
+}
+
+.leader-info strong {
+    color: #ff6b35;
+    margin-right: 5px;
+}
+
+.raid-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+.raid-actions button {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.btn-edit {
+    background: #5bc0de;
+    color: white;
+}
+
+.btn-edit:hover {
+    background: #46b8da;
+    transform: translateY(-1px);
+}
+
+.btn-lock {
+    background: #f0ad4e;
+    color: white;
+}
+
+.btn-lock:hover {
+    background: #ec971f;
+    transform: translateY(-1px);
+}
+
+.btn-unlock {
+    background: #5cb85c;
+    color: white;
+}
+
+.btn-unlock:hover {
+    background: #449d44;
+    transform: translateY(-1px);
+}
+
+.btn-done {
+    background: #5cb85c;
+    color: white;
+}
+
+.btn-done:hover {
+    background: #449d44;
+    transform: translateY(-1px);
+}
+
+.btn-cancel {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-cancel:hover {
+    background: #c82333;
+    transform: translateY(-1px);
+}
+
+.btn-cancel:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    transform: none;
+}
+
+@media (max-width: 480px) {
+    .raid-actions {
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .raid-actions button {
+        width: 100%;
+    }
+}
+
+.create-raid-section .wow-raid-form-container {
+    max-width: 100%;
+    margin: 0;
+}
+
+.create-raid-section .raid-form-wrapper {
+    background: rgba(64, 64, 64, 0.8);
+    border: 1px solid #555;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    padding: 20px;
+}
+
+.create-raid-section .raid-form-wrapper h3 {
+    color: #ff6b35;
+    border-bottom: 2px solid #ff6b35;
+    font-size: 20px;
+}
+
+.create-raid-section .form-row label,
+.create-raid-section .time-field label {
+    color: #ccc;
+    font-size: 13px;
+}
+
+.create-raid-section .form-row input,
+.create-raid-section .form-row select,
+.create-raid-section .form-row textarea,
+.create-raid-section .time-field input,
+.create-raid-section .time-field select {
+    background: rgba(40, 40, 40, 0.9) !important;
+    border: 1px solid #666 !important;
+    color: #fff !important;
+    padding: 8px !important;
+    font-size: 14px !important;
+}
+
+.create-raid-section .form-help {
+    color: #999 !important;
+    font-size: 11px !important;
+    margin-top: 3px !important;
+    font-style: italic !important;
+}
+
+.create-raid-section input[type="time"] {
+    background: rgba(40, 40, 40, 0.9) !important;
+    border: 1px solid #666 !important;
+    color: #fff !important;
+    padding: 8px !important;
+    font-size: 14px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+.create-raid-section input[type="time"]:focus {
+    border-color: #ff6b35 !important;
+    box-shadow: 0 0 8px rgba(255, 107, 53, 0.3) !important;
+    outline: none !important;
+}
+
+.create-raid-section input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    cursor: pointer;
+}
+
+.create-raid-section input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    cursor: pointer;
+}
+
+.create-raid-section select {
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ccc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 8px center !important;
+    background-size: 16px !important;
+    padding-right: 32px !important;
+}
+
+.create-raid-section select option {
+    background: #2a2a2a;
+    color: #fff;
+}
+
+.create-raid-section .form-row input:focus,
+.create-raid-section .form-row select:focus,
+.create-raid-section .form-row textarea:focus,
+.create-raid-section .time-field input:focus,
+.create-raid-section .time-field select:focus {
+    border-color: #ff6b35 !important;
+    box-shadow: 0 0 8px rgba(255, 107, 53, 0.3) !important;
+    outline: none !important;
+}
+
+.create-raid-section #submit-raid-btn {
+    background: linear-gradient(135deg, #ff6b35, #e55a2b);
+    padding: 10px 20px;
+    font-size: 15px;
+    margin-top: 10px;
+}
+
+.create-raid-section #submit-raid-btn:hover {
+    background: linear-gradient(135deg, #e55a2b, #cc4622);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(255, 107, 53, 0.3);
+}
+
+.create-raid-section .form-success {
+    background: rgba(40, 167, 69, 0.2);
+    border: 1px solid #28a745;
+    color: #28a745;
+    padding: 10px;
+    font-size: 14px;
+}
+
+.create-raid-section .form-error,
+.create-raid-section .raid-form-error {
+    background: rgba(220, 53, 69, 0.2);
+    border: 1px solid #dc3545;
+    color: #dc3545;
+    padding: 10px;
+    font-size: 14px;
+}
+
+#debug-info {
+    font-family: monospace;
+    word-wrap: break-word;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+}
+
+#raids-content p {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+</style>
