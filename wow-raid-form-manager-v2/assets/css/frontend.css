@@ -1,0 +1,1043 @@
+/* WoW Raid Form Manager - Frontend Styles */
+
+/* Raid Form Container */
+.wow-raid-form-container {
+    max-width: 600px;
+    margin: 20px 0;
+}
+
+.raid-form-wrapper {
+    background: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.raid-form-wrapper h3 {
+    margin-top: 0;
+    color: #333;
+    border-bottom: 2px solid #0073aa;
+    padding-bottom: 10px;
+    font-size: 20px;
+}
+
+/* Form Rows */
+.form-row {
+    margin-bottom: 15px;
+    clear: both;
+}
+
+.form-row label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #555;
+    font-size: 13px;
+}
+
+.form-row input,
+.form-row select,
+.form-row textarea {
+    width: 100%;
+    padding: 8px;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+    transition: border-color 0.3s ease;
+    background-color: #fff;
+    color: #333;
+}
+
+.form-row select {
+    background-color: #fff;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 16px;
+    padding-right: 32px;
+}
+
+.form-row input:focus,
+.form-row select:focus,
+.form-row textarea:focus {
+    border-color: #0073aa;
+    outline: none;
+    box-shadow: 0 0 4px rgba(0, 115, 170, 0.3);
+}
+
+.form-help {
+    display: block;
+    font-size: 11px;
+    color: #999;
+    margin-top: 3px;
+    font-style: italic;
+}
+
+/* Submit Buttons */
+#submit-raid-btn, #submit-booking-btn {
+    background: linear-gradient(135deg, #0073aa, #005a87);
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    width: 100%;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+#submit-raid-btn:hover, #submit-booking-btn:hover {
+    background: linear-gradient(135deg, #005a87, #004066);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0, 115, 170, 0.3);
+}
+
+#submit-raid-btn:disabled, #submit-booking-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Loading States */
+#form-loading, #booking-loading {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+    margin-top: 10px;
+}
+
+/* Error and Success Messages */
+.raid-form-error, .booking-form-error {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 12px;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    margin: 12px 0;
+    font-weight: bold;
+}
+
+.raid-form-error a, .booking-form-error a {
+    color: #721c24;
+    text-decoration: underline;
+}
+
+.form-success {
+    background: #d4edda;
+    color: #155724;
+    padding: 12px;
+    border: 1px solid #c3e6cb;
+    border-radius: 4px;
+    margin: 12px 0;
+    font-weight: bold;
+}
+
+.form-error {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 12px;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    margin: 12px 0;
+    font-weight: bold;
+}
+
+/* Booking Form Styles */
+.wow-booking-form-container {
+    max-width: 800px;
+    margin: 20px 0;
+}
+
+.booking-form-wrapper {
+    background: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.form-section {
+    margin-bottom: 25px;
+    padding: 15px;
+    background: #fff;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+}
+
+.form-section h4 {
+    margin: 0 0 15px 0;
+    color: #495057;
+    font-size: 16px;
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 8px;
+}
+
+.checkbox-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #495057;
+    cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+}
+
+.available-raids-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #fff;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+}
+
+.selected-raid-info {
+    background: #e3f2fd;
+    padding: 15px;
+    border-radius: 6px;
+    border-left: 4px solid #2196f3;
+}
+
+/* Priority Queue Styles */
+.armor-queue-info {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 15px;
+    margin-top: 10px;
+}
+
+.armor-queue-info h6 {
+    margin: 0 0 10px 0;
+    color: #495057;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.armor-queue-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.queue-slot {
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.queue-slot.available {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.queue-slot.primary {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.queue-slot.backup {
+    background: #cce5ff;
+    color: #004085;
+    border: 1px solid #b8daff;
+}
+
+.queue-slot.waitlist {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.queue-slot.next-position {
+    background: #e2e3e5;
+    color: #6c757d;
+    border: 1px solid #d6d8db;
+    font-style: italic;
+}
+
+.queue-slot i {
+    font-size: 14px;
+    width: 16px;
+}
+
+/* Booking Management Styles */
+.wow-bookings-container {
+    max-width: 1200px;
+    margin: 20px 0;
+}
+
+.bookings-wrapper {
+    background: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.armor-queue-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.armor-summary-card {
+    background: #fff;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 15px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.armor-summary-card.has-primary {
+    border-color: #ffc107;
+    background: linear-gradient(135deg, #fff8e1 0%, #ffffff 100%);
+}
+
+.armor-summary-card.no-primary {
+    border-color: #28a745;
+    background: linear-gradient(135deg, #f1f8e9 0%, #ffffff 100%);
+    box-shadow: 0 0 10px rgba(40, 167, 69, 0.2);
+}
+
+.armor-summary-card h6 {
+    margin: 0 0 10px 0;
+    color: #333;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.armor-counts {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-bottom: 10px;
+}
+
+.count-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    padding: 2px 0;
+}
+
+.count-item.primary {
+    color: #856404;
+    font-weight: bold;
+}
+
+.count-item.backup {
+    color: #004085;
+}
+
+.count-item.waitlist {
+    color: #4a148c;
+}
+
+.count-total {
+    border-top: 1px solid #dee2e6;
+    padding-top: 5px;
+    font-weight: bold;
+    color: #333;
+}
+
+.btn-view-queue {
+    background: #6c757d;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: bold;
+    width: 100%;
+}
+
+.btn-view-queue:hover {
+    background: #545b62;
+}
+
+/* Priority Management Tools */
+.priority-tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.priority-tools-grid button {
+    background: #6f42c1;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.priority-tools-grid button:hover {
+    background: #5a3696;
+    transform: translateY(-1px);
+}
+
+.priority-tools-grid button i {
+    margin-right: 5px;
+}
+
+#auto-promote-btn {
+    background: #28a745;
+}
+
+#auto-promote-btn:hover {
+    background: #218838;
+}
+
+#transfer-waitlist-btn {
+    background: #fd7e14;
+}
+
+#transfer-waitlist-btn:hover {
+    background: #e76b00;
+}
+
+#reorder-queue-btn {
+    background: #6610f2;
+}
+
+#reorder-queue-btn:hover {
+    background: #520dc2;
+}
+
+/* Bookings Table */
+.bookings-table-container {
+    overflow-x: auto;
+    margin: 20px 0;
+}
+
+.bookings-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.bookings-table th,
+.bookings-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #dee2e6;
+    font-size: 13px;
+}
+
+.bookings-table th {
+    background: #f8f9fa;
+    font-weight: bold;
+    color: #495057;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+}
+
+.booking-row.armor-primary {
+    background: linear-gradient(90deg, rgba(255, 235, 59, 0.1) 0%, transparent 100%);
+    border-left: 4px solid #ffc107;
+}
+
+.booking-row.armor-backup {
+    background: linear-gradient(90deg, rgba(33, 150, 243, 0.1) 0%, transparent 100%);
+    border-left: 4px solid #2196f3;
+}
+
+.booking-row.armor-waitlist {
+    background: linear-gradient(90deg, rgba(156, 39, 176, 0.1) 0%, transparent 100%);
+    border-left: 4px solid #9c27b0;
+}
+
+.armor-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.armor-type {
+    font-weight: bold;
+    color: #495057;
+    font-size: 13px;
+}
+
+.priority-badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: bold;
+    text-transform: uppercase;
+    width: fit-content;
+}
+
+.priority-badge.primary {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.priority-badge.backup {
+    background: #cce5ff;
+    color: #004085;
+}
+
+.priority-badge.waitlist {
+    background: #e1bee7;
+    color: #4a148c;
+}
+
+.priority-badge i {
+    font-size: 10px;
+}
+
+/* Action Buttons */
+.btn-small {
+    padding: 3px 8px;
+    font-size: 11px;
+    margin-right: 5px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.btn-promote, .btn-demote {
+    color: white;
+    font-weight: bold;
+}
+
+.btn-promote {
+    background: #28a745;
+}
+
+.btn-promote:hover {
+    background: #218838;
+}
+
+.btn-demote {
+    background: #dc3545;
+}
+
+.btn-demote:hover {
+    background: #c82333;
+}
+
+.btn-confirm {
+    background: #007bff;
+    color: white;
+}
+
+.btn-complete {
+    background: #28a745;
+    color: white;
+}
+
+.btn-cancel {
+    background: #dc3545;
+    color: white;
+}
+
+/* Status Badges */
+.status-badge {
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.status-pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status-confirmed {
+    background: #cce5ff;
+    color: #004085;
+}
+
+.status-completed {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-cancelled {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* Priority Dialog */
+.priority-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.dialog-content {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    min-width: 400px;
+    max-width: 90vw;
+}
+
+.dialog-content h4 {
+    margin: 0 0 15px 0;
+    color: #333;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #555;
+}
+
+.form-group select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.dialog-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+.dialog-actions button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.dialog-actions button:first-child {
+    background: #007bff;
+    color: white;
+}
+
+.dialog-actions button:first-child:hover {
+    background: #0056b3;
+}
+
+.dialog-actions button:last-child {
+    background: #6c757d;
+    color: white;
+}
+
+.dialog-actions button:last-child:hover {
+    background: #545b62;
+}
+
+/* Raid Dashboard */
+.raid-dashboard-container {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.raid-form-section,
+.raid-list-section {
+    flex: 1;
+    min-width: 300px;
+}
+
+.raids-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.raids-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.raids-controls button {
+    background: #6c757d;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.raids-controls button:hover {
+    background: #545b62;
+}
+
+/* Simple Raid Cards */
+.simple-raid-card {
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 10px;
+    transition: all 0.3s ease;
+}
+
+.simple-raid-card:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.raid-title {
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.raid-info,
+.raid-leaders {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 3px;
+}
+
+.raid-actions {
+    margin-top: 10px;
+}
+
+.btn-sm {
+    padding: 3px 8px;
+    font-size: 11px;
+    margin-right: 5px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    background: #6c757d;
+    color: white;
+}
+
+.btn-sm:hover {
+    background: #545b62;
+}
+
+.btn-lock, .btn-unlock {
+    background: #ffc107;
+    color: #333;
+}
+
+.btn-done {
+    background: #28a745;
+    color: white;
+}
+
+.btn-cancel {
+    background: #dc3545;
+    color: white;
+}
+
+/* Raid Status Colors */
+.raid-status-active {
+    border-left: 4px solid #28a745;
+}
+
+.raid-status-locked {
+    border-left: 4px solid #ffc107;
+}
+
+.raid-status-done {
+    border-left: 4px solid #6c757d;
+    opacity: 0.7;
+}
+
+.raid-status-cancelled {
+    border-left: 4px solid #dc3545;
+    opacity: 0.7;
+}
+
+.raid-status-delayed {
+    border-left: 4px solid #fd7e14;
+}
+
+/* Hidden Elements */
+.hidden {
+    display: none !important;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .raid-dashboard-container {
+        flex-direction: column;
+    }
+    
+    .armor-queue-summary {
+        grid-template-columns: 1fr;
+    }
+    
+    .priority-tools-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .bookings-table-container {
+        font-size: 12px;
+    }
+    
+    .dialog-content {
+        min-width: 300px;
+        margin: 20px;
+    }
+    
+    .dialog-actions {
+        flex-direction: column;
+    }
+    
+    .checkbox-group {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Loading States */
+.loading {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+    padding: 20px;
+}
+
+/* Error States */
+.error {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+/* Loot Type Colors */
+.loot-saved { 
+    color: #46b450; 
+    font-weight: bold; 
+}
+
+.loot-unsaved { 
+    color: #dc3232; 
+    font-weight: bold; 
+}
+
+.loot-vip { 
+    color: #ffb900; 
+    font-weight: bold; 
+}
+
+/* Difficulty Colors */
+.difficulty-normal { 
+    color: #666; 
+}
+
+.difficulty-heroic { 
+    color: #0073aa; 
+    font-weight: bold; 
+}
+
+.difficulty-mythic { 
+    color: #dc3232; 
+    font-weight: bold; 
+}
+
+/* Raid Card Styles */
+.raids-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.raid-card {
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 15px;
+    transition: all 0.3s ease;
+}
+
+.raid-card.selectable {
+    cursor: pointer;
+}
+
+.raid-card.selectable:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.raid-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.raid-header h4 {
+    margin: 0;
+    color: #333;
+}
+
+.loot-badge {
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.loot-badge.loot-vip {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.loot-badge.loot-saved {
+    background: #d4edda;
+    color: #155724;
+}
+
+.loot-badge.loot-unsaved {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.raid-details p {
+    margin: 5px 0;
+    font-size: 13px;
+    color: #666;
+}
+
+.raid-details p strong {
+    color: #333;
+}
+
+.raid-actions .btn-select {
+    width: 100%;
+    margin-top: 10px;
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.raid-actions .btn-select:hover {
+    background: #0056b3;
+}
+
+.raid-info-compact {
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+/* Summary Stats */
+.summary-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.stat-item {
+    background: #f8f9fa;
+    padding: 8px;
+    border-radius: 4px;
+    text-align: center;
+    font-size: 12px;
+}
+
+.stat-item strong {
+    display: block;
+    color: #333;
+    margin-bottom: 3px;
+}
+
+/* Manageable Raids Grid */
+.manageable-raids-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.raid-card.manageable {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.raid-card.manageable:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+    background: #f8f9fa;
+}
+
+.raid-card.manageable h4 {
+    margin: 0 0 10px 0;
+    color: #333;
+}
+
+.raid-card.manageable p {
+    margin: 5px 0;
+    font-size: 12px;
+    color: #666;
+}
+
+/* Additional Info Row */
+.additional-info-row td {
+    background: #f8f9fa;
+    font-size: 12px;
+    padding: 8px 12px !important;
+    border-bottom: 2px solid #dee2e6;
+}
